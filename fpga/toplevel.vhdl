@@ -16,7 +16,11 @@ entity toplevel is
 
 	-- UART0 signals:
 	uart0_txd : out std_ulogic;
-	uart0_rxd : in  std_ulogic
+	uart0_rxd : in  std_ulogic;
+
+	led_a: out std_logic;
+	led_b: out std_logic;
+	led_c: out std_logic
 	);
 end entity toplevel;
 
@@ -30,7 +34,23 @@ architecture behaviour of toplevel is
     signal system_clk : std_ulogic;
     signal system_clk_locked : std_ulogic;
 
+    signal led: std_ulogic := '0';
+    signal counter: integer range 0 to 50000000;
 begin
+    process(ext_clk)
+    begin
+        if rising_edge(ext_clk) then
+            counter <= counter + 1;
+            if counter = 50000000 then
+                led <= not led;
+                counter <= 0;
+            end if;
+        end if;
+    end process;
+
+    led_a <= led;
+    led_b <= uart0_rxd;
+    led_c <= '1';
 
     reset_controller: entity work.soc_reset
 	generic map(
