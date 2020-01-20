@@ -136,7 +136,7 @@ begin
         generic map(
             SIM => SIM,
             LINE_SIZE => 64,
-            NUM_LINES => 32,
+            NUM_LINES => 2,
 	    NUM_WAYS => 2
             )
         port map(
@@ -249,7 +249,7 @@ begin
     dcache_0: entity work.dcache
         generic map(
             LINE_SIZE => 64,
-            NUM_LINES => 32,
+            NUM_LINES => 2,
 	    NUM_WAYS => 2
             )
         port map (
