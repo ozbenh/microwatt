@@ -27,7 +27,7 @@ architecture rtl of cache_ram is
     constant SIZE : integer := 2**ROW_BITS;
 
     type ram_type is array (0 to SIZE - 1) of std_logic_vector(WIDTH - 1 downto 0);
-    signal ram : ram_type;
+    signal ram : ram_type := (others => (others => '0'));
     attribute ram_style : string;
     attribute ram_style of ram : signal is "block";
 

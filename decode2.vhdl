@@ -41,7 +41,8 @@ architecture behaviour of decode2 is
 		e : Decode2ToExecute1Type;
 	end record;
 
-	signal r, rin : reg_type;
+	signal r : reg_type := (e => Decode2ToExecute1Init);
+        signal rin : reg_type;
 
 	type decode_input_reg_t is record
 		reg_valid : std_ulogic;

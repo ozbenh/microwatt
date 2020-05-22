@@ -33,8 +33,10 @@ architecture behaviour of fetch1 is
     type reg_internal_t is record
 	stop_state: stop_state_t;
     end record;
-    signal r, r_next : Fetch1ToIcacheType;
-    signal r_int, r_next_int : reg_internal_t;
+    signal r          : Fetch1ToIcacheType := Fetch1ToIcacheTypeInit;
+    signal r_next     : Fetch1ToIcacheType;
+    signal r_int      : reg_internal_t := (stop_state => RUNNING);
+    signal r_next_int : reg_internal_t;
 begin
 
     regs : process(clk)

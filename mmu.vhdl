@@ -64,7 +64,16 @@ architecture behave of mmu is
         rc_error  : std_ulogic;
     end record;
 
-    signal r, rin : reg_stage_t;
+    signal r   : reg_stage_t := (valid => '0', iside => '0', store => '0', priv => '0',
+                                 addr => (others => '0'), prtbl => (others => '0'),
+                                 pid => (others => '0'), state => IDLE,
+                                 pgtbl0 => (others => '0'), pt0_valid => '0',
+                                 pgtbl3 => (others => '0'), pt3_valid => '0',
+                                 shift => "000000", mask_size => "00000",
+                                 pgbase => (others => '0'), pde => (others => '0'),
+                                 invalid => '0', badtree => '0', segerror => '0',
+                                 perm_err => '0', rc_error => '0');
+    signal rin : reg_stage_t;
 
     signal addrsh  : std_ulogic_vector(15 downto 0);
     signal mask    : std_ulogic_vector(15 downto 0);

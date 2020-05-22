@@ -77,7 +77,17 @@ architecture behave of loadstore1 is
     subtype byte_trim_t is std_ulogic_vector(1 downto 0);
     type trim_ctl_t is array(0 to 7) of byte_trim_t;
 
-    signal r, rin : reg_stage_t;
+    signal r : reg_stage_t :=
+        (load => '0', tlbie => '0', dcbz => '0', addr => (others => '0'),
+         store_data => (others => '0'), load_data => (others => '0'),
+         write_reg => (others => '0'), length => (others => '0'),
+         byte_reverse => '0', sign_extend => '0', update => '0',
+         update_reg => (others => '0'), xerc => (others => '0'),
+         reserve => '0', rc => '0', nc => '0', virt_mode => '0',
+         priv_mode => '0', state => IDLE, dwords_done => '0',
+         first_bytes => (others => '0'), second_bytes => (others => '0'),
+         dar => (others => '0'), dsisr => (others => '0'), instr_fault => '0');
+    signal rin : reg_stage_t;
     signal lsu_sum : std_ulogic_vector(63 downto 0);
 
     -- Generate byte enables from sizes

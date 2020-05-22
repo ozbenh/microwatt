@@ -23,7 +23,7 @@ architecture behaviour of divider is
     signal sresult    : std_ulogic_vector(64 downto 0);
     signal oresult    : std_ulogic_vector(63 downto 0);
     signal running    : std_ulogic;
-    signal count      : unsigned(6 downto 0);
+    signal count      : unsigned(6 downto 0) := "0000000";
     signal neg_result : std_ulogic;
     signal is_modulus : std_ulogic;
     signal is_32bit   : std_ulogic;

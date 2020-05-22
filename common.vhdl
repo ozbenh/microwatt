@@ -95,6 +95,9 @@ package common is
 	stop_mark: std_ulogic;
 	nia: std_ulogic_vector(63 downto 0);
     end record;
+    constant Fetch1ToIcacheTypeInit : Fetch1ToIcacheType :=
+        (req => '0', virt_mode => '0', priv_mode => '0', stop_mark => '0',
+         nia => (others => '0'));
 
     type IcacheToFetch2Type is record
 	valid: std_ulogic;
@@ -274,6 +277,9 @@ package common is
 	data : std_ulogic_vector(63 downto 0);
         byte_sel : std_ulogic_vector(7 downto 0);
     end record;
+    constant Loadstore1ToDcacheTypeInit : Loadstore1ToDcacheType :=
+        (addr => (others => '0'), data => (others => '0'), byte_sel => (others => '0'),
+         others => '0');
 
     type DcacheToLoadstore1Type is record
 	valid : std_ulogic;

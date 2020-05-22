@@ -20,7 +20,8 @@ entity decode1 is
 end entity decode1;
 
 architecture behaviour of decode1 is
-	signal r, rin : Decode1ToDecode2Type;
+    signal r : Decode1ToDecode2Type := Decode1ToDecode2Init;
+    signal rin : Decode1ToDecode2Type;
 
         subtype major_opcode_t is unsigned(5 downto 0);
         type major_rom_array_t is array(0 to 63) of decode_rom_t;

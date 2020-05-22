@@ -130,8 +130,8 @@ architecture rtl of icache is
     type cache_valids_t is array(index_t) of cache_way_valids_t;
 
     -- Storage. Hopefully "cache_rows" is a BRAM, the rest is LUTs
-    signal cache_tags   : cache_tags_array_t;
-    signal cache_valids : cache_valids_t;
+    signal cache_tags   : cache_tags_array_t := (others => (others => '0'));
+    signal cache_valids : cache_valids_t := (others => (others => '0'));
 
     attribute ram_style : string;
     attribute ram_style of cache_tags : signal is "distributed";
@@ -178,7 +178,10 @@ architecture rtl of icache is
         fetch_failed     : std_ulogic;
     end record;
 
-    signal r : reg_internal_t;
+    signal r : reg_internal_t :=
+        ( hit_way => 0, hit_nia => (others => '0'), hit_smark => '0',
+          hit_valid => '0', state => IDLE, wb =>wishbone_master_out_init,
+          store_way => 0, store_index => 0, store_row => 0, fetch_failed => '0');
 
     -- Async signals on incoming request
     signal req_index   : index_t;

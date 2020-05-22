@@ -23,7 +23,7 @@ architecture rtl of plru is
     subtype node_t is integer range 0 to count;
     type tree_t is array(node_t) of std_ulogic;
 
-    signal tree: tree_t;
+    signal tree: tree_t := (others => '0');
 begin
 
     -- XXX Check if we can turn that into a little ROM instead that

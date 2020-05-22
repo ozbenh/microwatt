@@ -117,8 +117,8 @@ architecture rtl of dcache is
     type cache_valids_t is array(index_t) of cache_way_valids_t;
 
     -- Storage. Hopefully "cache_rows" is a BRAM, the rest is LUTs
-    signal cache_tags   : cache_tags_array_t;
-    signal cache_valids : cache_valids_t;
+    signal cache_tags   : cache_tags_array_t := (others => (others => '0'));
+    signal cache_valids : cache_valids_t := (others => (others => '0'));
 
     attribute ram_style : string;
     attribute ram_style of cache_tags : signal is "distributed";
@@ -215,7 +215,11 @@ architecture rtl of dcache is
         mmu_req : std_ulogic;   -- indicates source of request
     end record;
 
-    signal r0 : reg_stage_0_t;
+    signal r0 : reg_stage_0_t := (req => Loadstore1ToDcacheTypeInit,
+                                  tlbie => '0',
+                                  doall => '0',
+                                  tlbld => '0',
+                                  mmu_req => '0');
     signal r0_valid : std_ulogic;
     
     -- First stage register, contains state for stage 1 of load hits
@@ -252,7 +256,23 @@ architecture rtl of dcache is
         tlbie_done       : std_ulogic;
     end record;
 
-    signal r1 : reg_stage_1_t;
+    signal r1 : reg_stage_1_t :=
+        (req => Loadstore1ToDcacheTypeInit,
+         hit_way => 0,
+         slow_data => (others => '0'),
+         state => IDLE,
+         wb => wishbone_master_out_init,
+         store_way => 0,
+         store_row => 0,
+         store_index => 0,
+         mmu_req => '0',
+         slow_valid => '0',
+         hit_load_valid => '0',
+         stcx_fail => '0',
+         error_done => '0',
+         cache_paradox => '0',
+         tlbie_done => '0'
+         );
 
     -- Reservation information
     --
