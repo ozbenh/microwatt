@@ -42,13 +42,15 @@ all = core_tb icache_tb dcache_tb multiply_tb dmi_dtm_tb divider_tb \
 all: $(all)
 
 core_files = decode_types.vhdl common.vhdl wishbone_types.vhdl fetch1.vhdl \
-	fetch2.vhdl utils.vhdl plru.vhdl cache_ram.vhdl icache.vhdl \
+	fetch2.vhdl utils.vhdl plru.vhdl icache.vhdl \
 	decode1.vhdl helpers.vhdl insn_helpers.vhdl gpr_hazard.vhdl \
 	cr_hazard.vhdl control.vhdl decode2.vhdl register_file.vhdl \
 	cr_file.vhdl crhelpers.vhdl ppc_fx_insns.vhdl rotator.vhdl \
 	logical.vhdl countzero.vhdl multiply.vhdl divider.vhdl execute1.vhdl \
 	loadstore1.vhdl mmu.vhdl dcache.vhdl writeback.vhdl core_debug.vhdl \
 	core.vhdl
+
+core_sim_files = sim_cache_ram.vhdl
 
 soc_files = wishbone_arbiter.vhdl wishbone_bram_wrapper.vhdl \
 	wishbone_debug_master.vhdl xics.vhdl syscon.vhdl soc.vhdl
@@ -67,10 +69,10 @@ soc_sim_link=$(patsubst %,-Wl$(comma)%,$(soc_sim_obj_files))
 core_tbs = multiply_tb divider_tb rotator_tb countzero_tb
 soc_tbs = core_tb icache_tb dcache_tb dmi_dtm_tb wishbone_bram_tb
 
-$(soc_tbs): %: $(core_files) $(soc_files) $(soc_sim_files) $(soc_sim_obj_files) %.vhdl
-	$(GHDL) -c $(GHDLFLAGS) $(soc_sim_link) $(core_files) $(soc_files) $(soc_sim_files) $@.vhdl -e $@
+$(soc_tbs): %: $(core_files) $(core_sim_files) $(soc_files) $(soc_sim_files) $(soc_sim_obj_files) %.vhdl
+	$(GHDL) -c $(GHDLFLAGS) $(soc_sim_link) $(core_files) $(core_sim_files) $(soc_files) $(soc_sim_files) $@.vhdl -e $@
 
-$(core_tbs): %: $(core_files) glibc_random.vhdl glibc_random_helpers.vhdl %.vhdl
+$(core_tbs): %: $(core_files) $(core_sim_files) glibc_random.vhdl glibc_random_helpers.vhdl %.vhdl
 	$(GHDL) -c $(GHDLFLAGS) $(core_files) glibc_random.vhdl glibc_random_helpers.vhdl $@.vhdl -e $@
 
 soc_reset_tb: fpga/soc_reset_tb.vhdl fpga/soc_reset.vhdl
@@ -114,7 +116,7 @@ dmi_dtm=dmi_dtm_dummy.vhdl
 fpga_files = $(core_files) $(soc_files) fpga/soc_reset.vhdl \
 	fpga/pp_fifo.vhd fpga/pp_soc_uart.vhd fpga/main_bram.vhdl
 
-synth_files = $(core_files) $(soc_files) $(fpga_files) $(clkgen) $(toplevel) $(dmi_dtm)
+synth_files = $(core_files) cache_ram.vhdl $(soc_files) $(fpga_files) $(clkgen) $(toplevel) $(dmi_dtm)
 
 microwatt.json: $(synth_files)
 	$(YOSYS) -m $(GHDLSYNTH) -p "ghdl --std=08 $(GHDL_IMAGE_GENERICS) $(GHDL_TARGET_GENERICS) $(synth_files) -e toplevel; synth_ecp5 -json $@"
