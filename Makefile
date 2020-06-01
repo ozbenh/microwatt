@@ -53,12 +53,12 @@ core_files = decode_types.vhdl common.vhdl wishbone_types.vhdl fetch1.vhdl \
 soc_files = wishbone_arbiter.vhdl wishbone_bram_wrapper.vhdl \
 	wishbone_debug_master.vhdl xics.vhdl syscon.vhdl soc.vhdl
 
-soc_sim_files = sim_console.vhdl sim_uart.vhdl sim_bram_helpers.vhdl \
+soc_sim_files = sim_console.vhdl sim_uart.vhdl sim_ram_helpers.vhdl \
 	sim_bram.vhdl sim_jtag_socket.vhdl sim_jtag.vhdl \
 	sim-unisim/BSCANE2.vhdl sim-unisim/BUFG.vhdl \
 	sim-unisim/unisim_vcomponents.vhdl dmi_dtm_xilinx.vhdl
 
-soc_sim_c_files = sim_vhpi_c.c sim_bram_helpers_c.c sim_console_c.c \
+soc_sim_c_files = sim_vhpi_c.c sim_ram_helpers_c.c sim_console_c.c \
 	sim_jtag_socket_c.c
 soc_sim_obj_files=$(soc_sim_c_files:.c=.o)
 comma := ,

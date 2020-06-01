@@ -9,7 +9,6 @@ use std.textio.all;
 
 library work;
 use work.utils.all;
-use work.sim_bram_helpers.all;
 
 entity main_bram is
     generic(
@@ -31,12 +30,25 @@ end entity main_bram;
 
 architecture sim of main_bram is
 
+    package sim_ram is new work.sim_ram_helpers generic map (WIDTH => WIDTH);
+    use sim_ram.all;
+
     constant WIDTH_BYTES : natural := WIDTH / 8;
     constant pad_zeros   : std_ulogic_vector(log2(WIDTH_BYTES)-1 downto 0)
 	:= (others => '0');
 
-    signal identifier : integer := behavioural_initialize(filename => RAM_INIT_FILE,
-							  size => MEMORY_SIZE);
+    function initialize_ram(filename: string; size: integer) return integer is
+        variable blk, rc : integer;
+    begin
+        -- TODO: Round up memory_size ?
+        blk := ram_create(MEMORY_SIZE / WIDTH_BYTES);
+        assert blk >= 0 report "Failed to initialize main BRAM" severity failure;
+        rc := ram_load_file(blk, 0, filename);
+        assert rc >= 0 report "Failed to load file " & filename & " into main BRAM";
+        return blk;
+    end;
+
+    signal blk : integer := initialize_ram(RAM_INIT_FILE, MEMORY_SIZE);
     -- Others
     signal obuf : std_logic_vector(WIDTH-1 downto 0);
 begin
@@ -44,18 +56,15 @@ begin
     -- Actual RAM template    
     memory_0: process(clk)
 	variable ret_dat_v : std_ulogic_vector(63 downto 0);
-	variable addr64    : std_ulogic_vector(63 downto 0);
     begin
 	if rising_edge(clk) then
-	    addr64 := (others => '0');
-	    addr64(HEIGHT_BITS + 2 downto 3) := addr;
 	    if we = '1' then	
 		report "RAM writing " & to_hstring(di) & " to " &
 		    to_hstring(addr & pad_zeros) & " sel:" & to_hstring(sel);
-		behavioural_write(di, addr64, to_integer(unsigned(sel)), identifier);
+                ram_write(blk, to_integer(unsigned(addr)), di, sel); 
 	    end if;
 	    if re = '1' then
-		behavioural_read(ret_dat_v, addr64, to_integer(unsigned(sel)), identifier);
+                ram_read(blk, to_integer(unsigned(addr)), ret_dat_v);
 		report "RAM reading from " & to_hstring(addr & pad_zeros) &
 		    " returns " & to_hstring(ret_dat_v);
 		obuf <= ret_dat_v(obuf'left downto 0);
