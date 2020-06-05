@@ -44,6 +44,7 @@
 
 #define DBG_LOG_ADDR		0x16
 #define DBG_LOG_DATA		0x17
+#define DBG_LOG_TRIG		0x18
 
 static bool debug;
 
@@ -561,6 +562,11 @@ static void log_stop(void)
 	printf("write ptr = %" PRIx64 "\n", waddr);
 }
 
+static void log_trig(uint64_t val)
+{
+	check(dmi_write(DBG_LOG_TRIG, val), "writing LOG_TRIG");
+}
+
 static void log_dump(const char *filename)
 {
 	FILE *f;
@@ -591,11 +597,14 @@ static void log_dump(const char *filename)
 
 	for (i = 0; i < lsize * 4; ++i) {
 		check(dmi_read(DBG_LOG_DATA, &ldata), "reading LOG_DATA");
+		printf(".");
+		fflush(stdout);
 		if (fwrite(&ldata, sizeof(ldata), 1, f) != 1) {
 			fprintf(stderr, "Write error on %s\n", filename);
 			exit(1);
 		}
 	}
+	printf("\n");
 	fclose(f);
 
 	check(dmi_write(DBG_LOG_ADDR, orig_laddr), "writing LOG_ADDR");
@@ -629,6 +638,7 @@ static void usage(const char *cmd)
 	fprintf(stderr, " Core logging:\n");
 	fprintf(stderr, "  lstart			start logging\n");
 	fprintf(stderr, "  lstop			stop logging\n");
+	fprintf(stderr, "  ltrig [clear | <addr>]	set log trigger\n");
 	fprintf(stderr, "  ldump <file>			dump log to file\n");
 
 	fprintf(stderr, "\n");
@@ -774,6 +784,17 @@ int main(int argc, char *argv[])
 			log_start();
 		} else if (strcmp(argv[i], "lstop") == 0) {
 			log_stop();
+		} else if (strcmp(argv[i], "ltrig") == 0) {
+			uint64_t addr;
+			bool clear = false;
+
+			if ((i+1) >= argc)
+				usage(argv[0]);
+
+			clear = !strcmp(argv[++i], "clear");
+			addr = strtoul(argv[i], NULL, 16);
+			printf("ltrig: clear=%d addr=%lx\n", clear, addr);
+			log_trig(clear ? 0 : addr | 1);
 		} else if (strcmp(argv[i], "ldump") == 0) {
 			const char *filename;
 

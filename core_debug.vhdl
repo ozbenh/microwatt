@@ -92,6 +92,10 @@ architecture behave of core_debug is
     constant DBG_CORE_LOG_ADDR       : std_ulogic_vector(3 downto 0) := "0110";
     constant DBG_CORE_LOG_DATA       : std_ulogic_vector(3 downto 0) := "0111";
 
+    -- Log buffer trigger
+    constant DBG_CORE_LOG_TRIG       : std_ulogic_vector(3 downto 0) := "1000";
+    constant DBG_CORE_LOG_TRIG_EN    : integer := 0;
+
     -- Some internal wires
     signal stat_reg : std_ulogic_vector(63 downto 0);
 
@@ -107,15 +111,20 @@ architecture behave of core_debug is
     -- Logging RAM
     constant LOG_INDEX_BITS : natural := log2(LOG_LENGTH);
     subtype log_ptr_t is unsigned(LOG_INDEX_BITS - 1 downto 0);
+    constant log_half : log_ptr_t  := to_unsigned(LOG_LENGTH/2, log_ptr_t'length);
     type log_array_t is array(0 to LOG_LENGTH - 1) of std_ulogic_vector(255 downto 0);
     signal log_array    : log_array_t;
     signal log_rd_ptr   : log_ptr_t;
     signal log_wr_ptr   : log_ptr_t;
+    signal log_trig_reg : std_ulogic_vector(63 downto 0) := (others => '0');
+    signal log_trig_stop : std_ulogic;
+    signal log_trig_hit : std_ulogic;
+    signal log_trig_cnt : log_ptr_t;
     signal log_toggle   : std_ulogic;
     signal log_wr_enable : std_ulogic;
     signal log_rd_ptr_latched : log_ptr_t;
     signal log_rd       : std_ulogic_vector(255 downto 0);
-    signal log_dmi_addr : std_ulogic_vector(31 downto 0);
+    signal log_dmi_addr : std_ulogic_vector(31 downto 0) := (others => '0');
     signal log_dmi_data : std_ulogic_vector(63 downto 0);
     signal do_dmi_log_rd : std_ulogic;
     signal log_dmi_reading : std_ulogic;
@@ -204,6 +213,9 @@ begin
                         elsif dmi_addr = DBG_CORE_LOG_ADDR then
                             log_dmi_addr <= dmi_din(31 downto 0);
                             do_dmi_log_rd <= '1';
+                        elsif dmi_addr = DBG_CORE_LOG_TRIG then
+                            log_trig_reg <= dmi_din(63 downto 0);
+                            report "LOG TREG=" & to_hstring(dmi_din(63 downto 0));
 			end if;
 		    else
 			report("DMI read from " & to_string(dmi_addr));
@@ -242,11 +254,28 @@ begin
     terminated_out <= terminated;
 
     -- Use MSB of read addresses to stop the logging
-    log_wr_enable <= not (log_read_addr(31) or log_dmi_addr(31));
+    log_trig_stop <= '1' when log_trig_reg(0) = '1' and log_trig_cnt = 0 else '0';
+    log_wr_enable <= not (log_read_addr(31) or log_dmi_addr(31) or log_trig_stop);
 
     log_ram: process(clk)
     begin
         if rising_edge(clk) then
+            if log_trig_reg(0) = '0' then
+                log_trig_hit <= '0';
+            elsif log_trig_stop = '0' and log_trig_hit = '1' then
+                log_trig_cnt <= log_trig_cnt - 1;
+            elsif log_trig_hit = '0' then
+                if log_data(42) = log_trig_reg(63) and log_data(41 downto 0) = log_trig_reg(43 downto 2) then
+                    report "LOG TRIG HIT !";
+                    log_trig_cnt <= log_half;
+                    log_trig_hit <= '1';
+                    report "LOG HALF=" & to_hstring(log_half);
+                end if;
+            end if;
+            if log_trig_hit = '1' then
+                report "LOG CNT=" & to_hstring(log_trig_cnt);
+                report "LOG EN =" & std_ulogic'image(log_wr_enable);
+            end if;
             if log_wr_enable = '1' then
                 log_array(to_integer(log_wr_ptr)) <= log_data;
             end if;
