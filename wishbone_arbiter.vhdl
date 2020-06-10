@@ -39,7 +39,7 @@ begin
 	for i in 0 to NUM_MASTERS-1 loop
 	    wb_masters_out(i).dat <= wb_slave_in.dat;
 	    wb_masters_out(i).ack <= wb_slave_in.ack when early_sel = i else '0';
-	    wb_masters_out(i).stall <= wb_slave_in.stall when early_sel = i else '1';
+	    wb_masters_out(i).stall <= wb_slave_in.stall when early_sel = i else wb_masters_in(i).stb and wb_masters_in(i).cyc;
 	end loop;
     end process;
 
