@@ -32,9 +32,10 @@ entity soc is
 	CLK_FREQ       : positive;
 	SIM            : boolean;
 	DISABLE_FLATTEN_CORE : boolean := false;
-	HAS_DRAM       : boolean  := false;
+	HAS_DRAM       : boolean := false;
 	DRAM_SIZE      : integer := 0;
-        DRAM_INIT_SIZE : integer := 0
+        DRAM_INIT_SIZE : integer := 0;
+        ADD_WB_BUFFERS : boolean := true
 	);
     port(
 	rst          : in  std_ulogic;
@@ -66,6 +67,13 @@ architecture behaviour of soc is
     signal wishbone_icore_out : wishbone_master_out;
     signal wishbone_debug_in : wishbone_slave_out;
     signal wishbone_debug_out : wishbone_master_out;
+
+    signal wb_b_dcore_in  : wishbone_slave_out;
+    signal wb_b_dcore_out : wishbone_master_out;
+    signal wb_b_icore_in  : wishbone_slave_out;
+    signal wb_b_icore_out : wishbone_master_out;
+    signal wb_b_debug_in : wishbone_slave_out;
+    signal wb_b_debug_out : wishbone_master_out;
 
     -- Arbiter array (ghdl doesnt' support assigning the array
     -- elements in the entity instantiation)
@@ -173,13 +181,53 @@ begin
 	    ext_irq => core_ext_irq
 	    );
 
+    -- Wishbone buffers
+    wb_bufs: if ADD_WB_BUFFERS generate
+        wb_dcore_buf: entity work.wb_buffer
+            port map (
+                clk           => system_clk,
+                rst           => rst_wbar,
+                wb_master_in  => wishbone_dcore_out,
+                wb_master_out => wishbone_dcore_in,
+                wb_slave_out  => wb_b_dcore_out,
+                wb_slave_in   => wb_b_dcore_in
+                );
+        wb_icore_buf: entity work.wb_buffer
+            port map (
+                clk           => system_clk,
+                rst           => rst_wbar,
+                wb_master_in  => wishbone_icore_out,
+                wb_master_out => wishbone_icore_in,
+                wb_slave_out  => wb_b_icore_out,
+                wb_slave_in   => wb_b_icore_in
+                );
+        wb_debug_buf: entity work.wb_buffer
+            port map (
+                clk           => system_clk,
+                rst           => rst_wbar,
+                wb_master_in  => wishbone_debug_out,
+                wb_master_out => wishbone_debug_in,
+                wb_slave_out  => wb_b_debug_out,
+                wb_slave_in   => wb_b_debug_in
+                );
+    end generate;
+
+    wb_no_bufs: if not ADD_WB_BUFFERS generate
+        wb_b_dcore_out <= wishbone_dcore_out;
+        wb_b_icore_out <= wishbone_icore_out;
+        wb_b_debug_out <= wishbone_debug_out;
+        wishbone_dcore_in <= wb_b_dcore_in;
+        wishbone_icore_in <= wb_b_icore_in;
+        wishbone_debug_in <= wb_b_debug_in;
+    end generate;
+
     -- Wishbone bus master arbiter & mux
-    wb_masters_out <= (0 => wishbone_dcore_out,
-		       1 => wishbone_icore_out,
-		       2 => wishbone_debug_out);
-    wishbone_dcore_in <= wb_masters_in(0);
-    wishbone_icore_in <= wb_masters_in(1);
-    wishbone_debug_in <= wb_masters_in(2);
+    wb_masters_out <= (0 => wb_b_dcore_out,
+		       1 => wb_b_icore_out,
+		       2 => wb_b_debug_out);
+    wb_b_dcore_in <= wb_masters_in(0);
+    wb_b_icore_in <= wb_masters_in(1);
+    wb_b_debug_in <= wb_masters_in(2);
     wishbone_arbiter_0: entity work.wishbone_arbiter
 	generic map(
 	    NUM_MASTERS => NUM_WB_MASTERS
